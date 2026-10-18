@@ -17,6 +17,13 @@ describe("detectPii", () => {
   it("detects PII-independent text as empty", () => {
     expect(detectPii("regular text")).toEqual([]);
   });
+
+  it("is not confused by regex lastIndex from a previous call", () => {
+    // A prior match leaves lastIndex deep in the pattern; a shorter later
+    // text would be scanned from that offset and miss its PII.
+    expect(detectPii("hi a@b.com.tr bye bye bye bye")).toEqual(["email"]);
+    expect(detectPii("x a@b.com.tr")).toEqual(["email"]);
+  });
 });
 
 describe("maskPii", () => {
@@ -33,5 +40,13 @@ describe("maskPii", () => {
 
   it("masks national IDs", () => {
     expect(maskPii("id is 12345678901")).toBe("id is [masked-national_id]");
+  });
+
+  it("masks every occurrence of each category, not just the first", () => {
+    expect(
+      maskPii("a@b.com.tr or a@b.com.tr and 0532 123 45 67 again 0532 123 45 67"),
+    ).toBe(
+      "[masked-email] or [masked-email] and [masked-phone] again [masked-phone]",
+    );
   });
 });
