@@ -87,12 +87,3 @@ We have included a ready-to-import Postman Collection in the repository: [`postm
 | `slow` | HTTP 200 after 2600 ms server delay | Aborted at 2200 ms deadline; deterministic fallback served | `timeout` |
 | `flaky_500` | Attempt 1: HTTP 500; Attempt 2: HTTP 200 valid fixture | Transient 5xx retried within remaining budget; succeeds on attempt 2 | — |
 | `always_500` | Every attempt: HTTP 500 | Retried once; returns provider error without crashing critical path | `provider_error` |
-
----
-
-## Documentation & Blog Posts
-
-Detailed architectural deep-dives, rollout guides, and KVKK analyses are available in both Turkish and English:
-- [Turkish Blog Post](blog/tr.md)
-- [English Blog Post](blog/en.md)
-
