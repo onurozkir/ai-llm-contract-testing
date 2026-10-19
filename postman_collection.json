@@ -1,0 +1,343 @@
+{
+  "info": {
+    "_postman_id": "c88f1c4e-561b-4f93-b68e-9d214a1a3642",
+    "name": "LLM Contract Testing API",
+    "description": "Postman collection to test the Contract-Driven LLM Reply Suggestion system across all 10 provider modes, circuit breaker metrics, and PII masking rules.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Inspection",
+      "item": [
+        {
+          "name": "GET Sample Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "Lists sample customer tickets seeded in the store containing realistic customer PII."
+          }
+        },
+        {
+          "name": "GET Current Metrics & Breaker State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "metrics"]
+            },
+            "description": "Returns the rolling 20-call metrics window snapshot and the circuit breaker status (closed, open, half_open)."
+          }
+        },
+        {
+          "name": "POST Reset Circuit Breaker",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/breaker/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "breaker", "reset"]
+            },
+            "description": "Resets the rolling metrics window and closes the circuit breaker back to initial clean state."
+          }
+        },
+        {
+          "name": "GET Valid Raw Fixture",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/fixture/valid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fixture", "valid"]
+            },
+            "description": "Inspects the canonical valid JSON contract payload returned by the provider."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Reply Suggestion Scenarios",
+      "item": [
+        {
+          "name": "Scenario 1: Valid Mode (Happy Path)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"valid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Happy path: Provider returns HTTP 200 with valid contract JSON. LLM suggestion replaces the fallback suggestion on screen."
+          }
+        },
+        {
+          "name": "Scenario 2: Unavailable Mode (Model Silent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"unavailable\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Model reports status: 'unavailable'. This is treated as a valid contract response (not a violation), and the deterministic fallback suggestion is displayed."
+          }
+        },
+        {
+          "name": "Scenario 3: Malformed JSON (Contract Violation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"malformed_json\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider returns non-JSON text ('not json at all'). Network boundary catches parse_error, counts a contract violation, and safely falls back."
+          }
+        },
+        {
+          "name": "Scenario 4: Wrong Type in Field (Contract Violation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"wrong_type\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider returns confidence: 'high' (string instead of number). Strict Zod schema catches schema_violation and counts towards circuit breaker."
+          }
+        },
+        {
+          "name": "Scenario 5: Unknown Field Added (Strict Schema)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"unknown_field\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider sends an unexpected field ('sentiment': 'positive'). Zod .strict() rejects it to prevent silent schema drift."
+          }
+        },
+        {
+          "name": "Scenario 6: Version 2 Mismatch (Version Gate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"version_2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider sends contract_version: 2. Version gate rejects it before schema parsing."
+          }
+        },
+        {
+          "name": "Scenario 7: PII Leak in Output (Cross-Contamination Guard)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"pii_body\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider output contains a phone number ('0532 123 45 67'). Output PII scanner flags and discards the suggestion under reason: pii_detected."
+          }
+        },
+        {
+          "name": "Scenario 8: Slow Provider (2200ms Timeout Abort)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"slow\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider delays 2600ms. AbortController triggers hard cancel at 2200ms. Deterministic fallback continues without freezing the agent."
+          }
+        },
+        {
+          "name": "Scenario 9: Flaky 500 (Auto-Retry Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"flaky_500\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Attempt 1 returns HTTP 500; orchestrator automatically retries within remaining budget and succeeds on attempt 2."
+          }
+        },
+        {
+          "name": "Scenario 10: Always 500 (Provider Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"always_500\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Provider persistently returns HTTP 500. Retries once, then gracefully returns provider_error."
+          }
+        },
+        {
+          "name": "Scenario 11: Feature Flag Disabled",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": \"t-refund\",\n  \"mode\": \"valid\",\n  \"flagEnabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "When flagEnabled is false, zero HTTP calls are made to the LLM and reason: flag_off is returned immediately in 0ms."
+          }
+        },
+        {
+          "name": "Scenario 12: Custom Ticket with PII (Inspect Outbound Masking)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticket\": {\n    \"id\": \"custom-99\",\n    \"version\": 1,\n    \"category\": \"refund\",\n    \"subject\": \"Order cancellation for 0532 999 88 77\",\n    \"body\": \"My Turkish ID is 12345678901 and email is secret@client.com. Please refund.\"\n  },\n  \"mode\": \"valid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suggest"]
+            },
+            "description": "Send a custom ticket containing raw phone, email, and 11-digit national ID. Check 'outboundMaskedBody' in the response to verify that all PII was replaced with [masked-<category>] tags."
+          }
+        }
+      ]
+    }
+  ]
+}

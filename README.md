@@ -30,7 +30,29 @@ npm run typecheck
 
 # Run the agent-screen CLI demo
 npm run demo
+
+# Start the HTTP server for Postman testing
+npm run server
 ```
+
+---
+
+## Testing with Postman
+
+We have included a ready-to-import Postman Collection in the repository: [`postman_collection.json`](postman_collection.json).
+
+1. Start the server:
+   ```bash
+   npm run server
+   ```
+   The API server will listen on `http://127.0.0.1:3000`.
+2. Open **Postman**, click **Import**, and select or drag-and-drop `postman_collection.json`.
+3. You will get 15 ready-to-run requests covering:
+   - **Sample Tickets & Metrics Inspection**
+   - **Scenario 1 to 10**: Testing each provider failure mode (`valid`, `unavailable`, `malformed_json`, `wrong_type`, `unknown_field`, `version_2`, `pii_body`, `slow`, `flaky_500`, `always_500`).
+   - **Feature Flag Off**: Verifying 0ms fallback without network calls.
+   - **Custom Ticket Testing**: Sending your own customer text to inspect request masking and response behavior.
+   - **Circuit Breaker Reset**: Dynamically resetting the breaker.
 
 ---
 
@@ -73,3 +95,4 @@ npm run demo
 Detailed architectural deep-dives, rollout guides, and KVKK analyses are available in both Turkish and English:
 - [Turkish Blog Post](blog/tr.md)
 - [English Blog Post](blog/en.md)
+

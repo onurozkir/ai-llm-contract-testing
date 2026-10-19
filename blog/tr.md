@@ -204,3 +204,4 @@ Bu projenin sınırlarını da dürüstçe belirtelim:
 - **Kalıcı Depolama Yok**: Biletler ve öneriler test amaçlı bellek içi Map üzerinde tutulur.
 
 Sonuç olarak: LLM'ler sistemlerimize zeka katabilir, ancak disiplinli bir yazılım mimarisi olmadan zeka sadece tahmin edilemez bir risktir. Sıfır güven sözleşmeleri, katı zaman bütçeleri ve metrik odaklı devre kesicilerle bu riski kontrol altına almak tamamen bizim elimizde.
+

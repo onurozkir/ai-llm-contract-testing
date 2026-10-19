@@ -61,3 +61,4 @@ describe("TicketStore and deterministicSuggestion", () => {
     expect(generalSuggestion.body).not.toContain("customer@example.com");
   });
 });
+

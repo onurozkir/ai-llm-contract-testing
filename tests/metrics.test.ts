@@ -191,3 +191,4 @@ describe("CircuitBreaker", () => {
     expect(breaker.allowCall()).toBe(true);
   });
 });
+

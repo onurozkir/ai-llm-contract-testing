@@ -6,6 +6,7 @@
   "scripts": {
     "test": "vitest run",
     "demo": "tsx demo/cli.ts",
+    "server": "tsx demo/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

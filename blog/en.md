@@ -204,3 +204,4 @@ To keep our architecture transparent:
 - **In-Memory Storage**: Seeded tickets and fallback suggestions live in memory for demonstration purposes.
 
 LLMs can unlock tremendous productivity, but without rigorous boundaries, they introduce unacceptable operational fragility. By enforcing zero-trust contracts, strict deadline budgets, and metric-driven circuit breakers, you get the best of both worlds: AI capability without compromising system reliability.
+

@@ -88,3 +88,4 @@ export function deterministicSuggestion(ticket: Ticket): Suggestion {
     confidence: null,
   };
 }
+
